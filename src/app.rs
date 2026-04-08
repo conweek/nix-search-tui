@@ -6,7 +6,6 @@ pub enum CurrScreen {
     DisplayResults,
     Both,
     Detail,
-    Exiting,
 }
 
 pub enum Search {
