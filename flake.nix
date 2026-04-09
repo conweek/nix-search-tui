@@ -91,6 +91,10 @@
         }
       );
 
+      overlays.default = final: prev: {
+        nix-search-tui = self.packages.${final.system}.nix-search-tui;
+      };
+
       devShells = forAllSystems (system:
         let
           pkgs = import nixpkgs {
