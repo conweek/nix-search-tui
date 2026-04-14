@@ -156,10 +156,11 @@ fn draw_detail(frame: &mut Frame, app: &App) {
 
 // Draws the tabs pane
 fn draw_tabs(frame: &mut Frame, app: &App, area: Rect) {
-    let titles = vec!["Package", "Configuration"];
+    let titles = vec!["Package", "Configuration", "Home Manager"];
     let selected = match app.search_choice {
         Search::Package => 0,
         Search::Configuration => 1,
+        Search::HomeConfiguration => 2,
     };
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title("Mode"))
@@ -180,7 +181,12 @@ fn draw_result_list(frame: &mut Frame, app: &App, area: Rect) {
         .enumerate()
         .map(|(i, r)| {
             let is_selected = i == app.selected_result;
-            let line = if let Some((name, desc)) = r.split_once(" - ") {
+            let line = if r == "Home manager not found" {
+                Line::from(Span::styled(
+                    r.as_str(),
+                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                ))
+            } else if let Some((name, desc)) = r.split_once(" - ") {
                 let name_style = if is_selected {
                     Style::default().add_modifier(Modifier::BOLD)
                 } else {

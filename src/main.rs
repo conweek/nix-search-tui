@@ -96,7 +96,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     }
                     KeyCode::Enter => {
                         match app.search_choice {
-                            app::Search::Configuration => {
+                            app::Search::Configuration | app::Search::HomeConfiguration => {
                                 if app.results_from_config {
                                     let _ = app.fetch_detail();
                                     app.current_screen = CurrScreen::Detail;

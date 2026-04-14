@@ -8,9 +8,11 @@ pub enum CurrScreen {
     Detail,
 }
 
+#[derive(PartialEq)]
 pub enum Search {
     Package,
     Configuration,
+    HomeConfiguration,
 }
 
 pub struct App {
@@ -39,10 +41,10 @@ impl App {
         }
     }
 
-    fn get_man_page(&mut self) -> Result<&str, Box<dyn std::error::Error>> {
+    fn get_man_page(&mut self, file: &str) -> Result<&str, Box<dyn std::error::Error>> {
         if self.man_cache.is_none() {
             let output = Command::new("man")
-                .args(["-P", "cat", "configuration.nix"])
+                .args(["-P", "cat", file])
                 .stdout(std::process::Stdio::piped())
                 .stderr(std::process::Stdio::null())
                 .output()?;
@@ -57,7 +59,7 @@ impl App {
             Search::Package => {
                 let body = serde_json::json!({
                     "from": 0,
-                    "size": 50,
+                    "size": 1000,
                     "sort": [
                         {"_score": "desc", "package_attr_name": "desc", "package_pversion": "desc"}
                     ],
@@ -109,7 +111,7 @@ impl App {
 
             }
             Search::Configuration => {
-                let text = self.get_man_page()?.to_owned();
+                let text = self.get_man_page("configuration.nix")?.to_owned();
                 let query = &self.search_option;
 
                 self.results.clear();
@@ -124,6 +126,26 @@ impl App {
                     }
                 }
             }
+            Search::HomeConfiguration => {
+                let text = self.get_man_page("home-configuration.nix")?.to_owned();
+                let query = &self.search_option;
+
+                self.results.clear();
+                if text.is_empty() {
+                    self.results.push("Home manager not found".to_string());
+                } else {
+                    for line in text.lines() {
+                        let trimmed = line.trim();
+                        if !trimmed.is_empty()
+                            && !trimmed.contains(' ')
+                            && trimmed.contains(query.as_str())
+                            && (trimmed.starts_with("programs.") || trimmed.starts_with("services."))
+                        {
+                            self.results.push(trimmed.to_string());
+                        }
+                    }
+                }
+            }
         }
 
         Ok(())
@@ -135,7 +157,13 @@ impl App {
         };
         let option_name = selected.trim().to_string();
 
-        let text = self.get_man_page()?.to_owned();
+        let man_page = match self.search_choice {
+            Search::Configuration => "configuration.nix",
+            Search::HomeConfiguration => "home-configuration.nix",
+            _ => return Ok(()),
+        };
+        let text = self.get_man_page(man_page)?.to_owned();
+
         let mut found = false;
         let mut entry = String::new();
 
@@ -169,9 +197,11 @@ impl App {
     }
 
     pub fn cycle_tab(&mut self) {
+        self.man_cache = None;
         self.search_choice = match self.search_choice {
             Search::Package => Search::Configuration,
-            Search::Configuration => Search::Package,
+            Search::Configuration => Search::HomeConfiguration,
+            Search::HomeConfiguration => Search::Package,
         };
     }
 }
