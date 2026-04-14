@@ -138,8 +138,8 @@ impl App {
                         let trimmed = line.trim();
                         if !trimmed.is_empty()
                             && !trimmed.contains(' ')
+                            && trimmed.contains('.')
                             && trimmed.contains(query.as_str())
-                            && (trimmed.starts_with("programs.") || trimmed.starts_with("services."))
                         {
                             self.results.push(trimmed.to_string());
                         }
